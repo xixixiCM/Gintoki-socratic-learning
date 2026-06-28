@@ -1,0 +1,7 @@
+{
+  "id": "ml_gintoki",
+  "name": "AI 虚拟人物苏格拉底式学习系统",
+  "version": "0.1.0",
+  "description": "Markdown workspace for prompts, learner profile and session notes.",
+  "root": "."
+}
