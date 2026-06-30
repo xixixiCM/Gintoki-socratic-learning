@@ -17,3 +17,24 @@ export interface GraphData {
   nodes: GraphNode[];
   links: GraphLink[];
 }
+
+// ========== V0.3 课时局部知识图谱类型 ==========
+
+export type LessonGraphNodeStatus = 'completed' | 'current' | 'review' | 'support';
+
+export interface LessonGraphNode {
+  id: number;
+  name: string;
+  status: LessonGraphNodeStatus;
+}
+
+export interface LessonGraphLink {
+  source: number;
+  target: number;
+  relationType: string;
+}
+
+export interface LessonGraphData {
+  nodes: LessonGraphNode[];
+  links: LessonGraphLink[];
+}

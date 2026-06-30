@@ -2,6 +2,7 @@ import { Link, Navigate, Outlet, Route, Routes, useLocation } from 'react-router
 
 import { Home } from '../pages/Home';
 import { Graph } from '../pages/Graph';
+import { Classroom } from '../pages/Classroom';
 
 const Layout = (): JSX.Element => {
   const location = useLocation();
@@ -20,13 +21,23 @@ const Layout = (): JSX.Element => {
                 location.pathname === '/' ? 'bg-white text-slate-950' : 'text-slate-200 hover:bg-white/10'
               }`}
             >
-              首页
+              教材书架
+            </Link>
+            <Link
+              to="/classroom"
+              className={`rounded-full px-4 py-2 transition ${
+                location.pathname === '/classroom'
+                  ? 'bg-cyan-400 text-slate-950'
+                  : 'text-slate-200 hover:bg-white/10'
+              }`}
+            >
+              课堂
             </Link>
             <Link
               to="/graph"
               className={`rounded-full px-4 py-2 transition ${
                 location.pathname === '/graph'
-                  ? 'bg-cyan-400 text-slate-950'
+                  ? 'bg-emerald-400 text-slate-950'
                   : 'text-slate-200 hover:bg-white/10'
               }`}
             >
@@ -45,6 +56,7 @@ export const AppRouter = (): JSX.Element => {
     <Routes>
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
+        <Route path="/classroom" element={<Classroom />} />
         <Route path="/graph" element={<Graph />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
