@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as echarts from 'echarts';
-import type { CallbackDataParams, ECharts, EChartsOption } from 'echarts';
+import type { ECharts, EChartsOption } from 'echarts';
 
 import type { GraphData, GraphLink, GraphNode } from '../types/graph';
 
 interface KnowledgeGraphProps {
   graphData: GraphData;
+  // 新增：节点点击回调，接收节点名称
+  onNodeClick: (nodeName: string) => void;
 }
 
 const difficultyColorMap: Record<number, string> = {
@@ -24,7 +26,7 @@ const createNodeStyle = (node: GraphNode) => ({
   }
 });
 
-export const KnowledgeGraph = ({ graphData }: KnowledgeGraphProps): JSX.Element => {
+export const KnowledgeGraph = ({ graphData, onNodeClick }: KnowledgeGraphProps): JSX.Element => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<ECharts | null>(null);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
@@ -42,11 +44,20 @@ export const KnowledgeGraph = ({ graphData }: KnowledgeGraphProps): JSX.Element 
     const chart = echarts.init(containerRef.current);
     chartRef.current = chart;
 
+    // 监听图表节点点击
+chart.on('click', (params: any) => {
+  // 仅处理节点，忽略连线
+  if (params.dataType === 'node') {
+    const nodeName = params.name;
+    onNodeClick(nodeName);
+  }
+});
+
     const option: EChartsOption = {
       backgroundColor: 'transparent',
       tooltip: {
         trigger: 'item',
-        formatter: (params: CallbackDataParams) => {
+        formatter: (params: any) => {
           if (params.dataType === 'node') {
             const node = params.data as GraphNode;
             return `${node.name}<br />分类：${node.category}<br />难度：${node.difficulty}`;
@@ -111,7 +122,7 @@ export const KnowledgeGraph = ({ graphData }: KnowledgeGraphProps): JSX.Element 
           }
         }
       ]
-    };
+    }as any;
 
     chart.setOption(option);
     chart.on('click', (params) => {

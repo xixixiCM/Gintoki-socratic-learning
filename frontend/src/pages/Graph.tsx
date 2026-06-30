@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-
+import { useNavigate } from 'react-router-dom';
 import { getGraphData } from '../api/graph';
 import { KnowledgeGraph } from '../components/KnowledgeGraph';
 import type { GraphData } from '../types/graph';
@@ -8,7 +8,7 @@ export const Graph = (): JSX.Element => {
   const [graphData, setGraphData] = useState<GraphData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  const navigate = useNavigate();
   useEffect(() => {
     const loadGraphData = async () => {
       try {
@@ -48,7 +48,12 @@ export const Graph = (): JSX.Element => {
           暂无知识图谱数据。
         </div>
       ) : (
-        <KnowledgeGraph graphData={graphData} />
+        <KnowledgeGraph
+  graphData={graphData!}
+  onNodeClick={(nodeName: string) => {
+    navigate(`/chat?topic=${encodeURIComponent(nodeName)}`);
+  }}
+/>
       )}
     </main>
   );
