@@ -3,12 +3,14 @@ export interface GraphNode {
   name: string;
   category: string;
   difficulty: number;
+  description?: string | null;
 }
 
 export interface GraphLink {
   source: number;
   target: number;
   relationType: string;
+  description?: string | null;
 }
 
 export interface GraphData {
