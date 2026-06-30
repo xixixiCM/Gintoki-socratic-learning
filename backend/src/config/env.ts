@@ -24,8 +24,10 @@ export const env = {
   dbCharset: process.env.DB_CHARSET ?? 'utf8mb4',
   jwtSecret: process.env.JWT_SECRET ?? 'please_change_to_a_strong_secret',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
-  deepseekApiKey: process.env.DEEPSEEK_API_KEY ?? 'your_deepseek_api_key',
+  deepseekApiKey: process.env.DEEPSEEK_API_KEY ?? 'sk-e7facfe2cb8441ed965ae800396a60aa',
   deepseekBaseUrl: process.env.DEEPSEEK_BASE_URL ?? 'https://api.deepseek.com',
   deepseekModel: process.env.DEEPSEEK_MODEL ?? 'deepseek-chat',
+  // DeepSeek request timeout in milliseconds (read from DEEPSEEK_TIMEOUT)
+  deepseekTimeout: toNumber(process.env.DEEPSEEK_TIMEOUT, 60000),
   workspaceDir: process.env.WORKSPACE_DIR ?? './workspaces/ml_gintoki'
 } as const;
