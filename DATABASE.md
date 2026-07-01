@@ -6,9 +6,10 @@
 |---|---|---|
 | id | bigint | 主键 |
 | username | varchar(50) | 用户名 |
-| password | varchar(255) | 密码 |
+| password | varchar(255) | 密码（正式项目应使用 bcrypt 哈希） |
+| nickname | varchar(50) | 昵称，可为空 |
 | role | varchar(20) | STUDENT / ADMIN |
-| nickname | varchar(50) | 昵称 |
+| status | varchar(20) | active / disabled |
 | create_time | datetime | 创建时间 |
 | update_time | datetime | 更新时间 |
 

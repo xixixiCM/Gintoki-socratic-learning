@@ -30,21 +30,21 @@ export const Graph = (): JSX.Element => {
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
-          <p className="text-sm uppercase tracking-[0.25em] text-cyan-200">Knowledge Graph</p>
-          <h1 className="mt-2 text-3xl font-bold text-white sm:text-4xl">机器学习知识图谱</h1>
+          <h1 className="text-[34px] font-bold text-shelf-ink tracking-wide">机器学习知识图谱</h1>
+          <p className="mt-2 text-shelf-muted text-[15px] leading-relaxed">完整课程知识图谱，展示所有知识点及其前置关系。</p>
         </div>
       </div>
 
       {loading ? (
-        <div className="rounded-3xl border border-white/10 bg-white/10 p-10 text-center text-slate-100 backdrop-blur">
+        <div className="rounded-[30px] border border-shelf-line/90 bg-shelf-panel/80 p-10 text-center text-shelf-muted shadow-shelf-sm">
           正在加载知识图谱数据...
         </div>
       ) : error !== null ? (
-        <div className="rounded-3xl border border-red-400/30 bg-red-500/10 p-10 text-center text-red-100">
+        <div className="rounded-[30px] border border-red-400/30 bg-red-50/60 p-10 text-center text-red-700 shadow-shelf-sm">
           {error}
         </div>
       ) : graphData === null || graphData.nodes.length === 0 || graphData.links.length === 0 ? (
-        <div className="rounded-3xl border border-white/10 bg-white/10 p-10 text-center text-slate-100 backdrop-blur">
+        <div className="rounded-[30px] border border-shelf-line/90 bg-shelf-panel/80 p-10 text-center text-shelf-muted shadow-shelf-sm">
           暂无知识图谱数据。
         </div>
       ) : (

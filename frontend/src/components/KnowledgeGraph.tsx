@@ -9,11 +9,11 @@ interface KnowledgeGraphProps {
 }
 
 const difficultyColorMap: Record<number, string> = {
-  1: '#2563eb',
-  2: '#0f766e',
-  3: '#7c3aed',
-  4: '#ea580c',
-  5: '#dc2626'
+  1: '#3b6b4b',
+  2: '#29445f',
+  3: '#8b5a34',
+  4: '#c98a2e',
+  5: '#9b651c'
 };
 
 const createNodeStyle = (node: GraphNode) => ({
@@ -81,10 +81,10 @@ export const KnowledgeGraph = ({ graphData }: KnowledgeGraphProps): JSX.Element 
             label: {
               show: true,
               formatter: link.relationType,
-              color: '#cbd5e1'
+              color: '#7b6a58'
             },
             lineStyle: {
-              color: '#94a3b8',
+              color: '#b9976a',
               width: 2,
               curveness: 0.18,
               opacity: 0.9,
@@ -93,7 +93,7 @@ export const KnowledgeGraph = ({ graphData }: KnowledgeGraphProps): JSX.Element 
           })),
           label: {
             show: true,
-            color: '#f8fafc',
+            color: '#2d241b',
             fontSize: 12,
             fontWeight: 600,
             formatter: '{b}'
@@ -101,7 +101,7 @@ export const KnowledgeGraph = ({ graphData }: KnowledgeGraphProps): JSX.Element 
           edgeSymbol: ['none', 'arrow'],
           edgeSymbolSize: 8,
           lineStyle: {
-            color: '#94a3b8'
+            color: '#b9976a'
           },
           emphasis: {
             focus: 'adjacency',
@@ -165,7 +165,7 @@ export const KnowledgeGraph = ({ graphData }: KnowledgeGraphProps): JSX.Element 
             label: {
               show: true,
               formatter: link.relationType,
-              color: '#cbd5e1'
+              color: '#7b6a58'
             }
           }))
         }
@@ -175,28 +175,28 @@ export const KnowledgeGraph = ({ graphData }: KnowledgeGraphProps): JSX.Element 
 
   return (
     <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-4 shadow-glow backdrop-blur">
+      <div className="rounded-[30px] border border-shelf-line/90 bg-shelf-panel/90 p-4 shadow-shelf">
         <div ref={containerRef} className="h-[520px] w-full" />
       </div>
-      <aside className="rounded-3xl border border-white/10 bg-white/90 p-5 shadow-glow backdrop-blur">
-        <h2 className="text-lg font-semibold text-slate-900">节点详情</h2>
+      <aside className="rounded-[30px] border border-shelf-line/90 bg-white/90 p-5 shadow-shelf">
+        <h2 className="text-lg font-semibold text-shelf-ink">节点详情</h2>
         {selectedNode === null ? (
-          <p className="mt-4 text-sm leading-6 text-slate-600">
+          <p className="mt-4 text-sm leading-6 text-shelf-muted">
             点击图谱中的节点，查看知识点名称、分类和难度。
           </p>
         ) : (
           <div className="mt-4 space-y-4">
             <div>
-              <p className="text-sm text-slate-500">知识点名称</p>
-              <p className="mt-1 text-lg font-semibold text-slate-900">{selectedNode.name}</p>
+              <p className="text-sm text-shelf-muted">知识点名称</p>
+              <p className="mt-1 text-lg font-semibold text-shelf-ink">{selectedNode.name}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-500">分类</p>
-              <p className="mt-1 text-base text-slate-700">{selectedNode.category}</p>
+              <p className="text-sm text-shelf-muted">分类</p>
+              <p className="mt-1 text-base text-shelf-ink/80">{selectedNode.category}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-500">难度</p>
-              <p className="mt-1 text-base text-slate-700">Level {selectedNode.difficulty}</p>
+              <p className="text-sm text-shelf-muted">难度</p>
+              <p className="mt-1 text-base text-shelf-ink/80">Level {selectedNode.difficulty}</p>
             </div>
           </div>
         )}

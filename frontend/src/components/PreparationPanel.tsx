@@ -16,40 +16,39 @@ export const PreparationPanel: React.FC<PreparationPanelProps> = ({
   if (prepareStatus === 'idle') return null;
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900/90 to-slate-800/70 p-6 shadow-2xl backdrop-blur">
-      <h3 className="mb-6 text-lg font-bold text-white">AI 备课流程</h3>
+    <div className="rounded-[30px] border border-shelf-line/90 bg-shelf-panel/80 p-6 shadow-shelf-sm backdrop-blur">
+      <h3 className="mb-6 text-lg font-bold text-shelf-ink">AI 备课流程</h3>
 
       {/* 步骤列表 */}
       <div className="space-y-3">
         {prepareSteps.map((step, index) => {
           const isDone = index < currentStep;
           const isCurrent = index === currentStep;
-          const isLast = index === prepareSteps.length - 1;
 
           return (
             <div
               key={index}
               className={`flex items-center gap-3 rounded-xl px-4 py-3 transition-all ${
                 isCurrent
-                  ? 'bg-cyan-500/10 border border-cyan-500/30 text-cyan-200'
+                  ? 'bg-shelf-gold/10 border border-shelf-gold/30 text-shelf-ink'
                   : isDone
-                    ? 'text-slate-400'
-                    : 'text-slate-600'
+                    ? 'text-shelf-muted'
+                    : 'text-shelf-muted/40'
               }`}
             >
               {/* 状态图标 */}
               <div className="flex-shrink-0">
                 {isDone ? (
-                  <svg className="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-5 w-5 text-shelf-green" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 ) : isCurrent ? (
-                  <svg className="h-5 w-5 animate-spin text-cyan-400" fill="none" viewBox="0 0 24 24">
+                  <svg className="h-5 w-5 animate-spin text-shelf-gold" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
                 ) : (
-                  <div className="h-5 w-5 rounded-full border-2 border-slate-600" />
+                  <div className="h-5 w-5 rounded-full border-2 border-shelf-muted/30" />
                 )}
               </div>
 
@@ -57,11 +56,6 @@ export const PreparationPanel: React.FC<PreparationPanelProps> = ({
               <span className={`text-sm ${isCurrent ? 'font-semibold' : ''}`}>
                 {step}
               </span>
-
-              {/* 完成标记 */}
-              {isDone && !isLast && (
-                <div className="ml-auto h-0.5 w-8 rounded bg-emerald-500/30" />
-              )}
             </div>
           );
         })}
@@ -69,9 +63,9 @@ export const PreparationPanel: React.FC<PreparationPanelProps> = ({
 
       {/* 备课完成摘要 */}
       {prepareStatus === 'done' && preparationResult !== null && (
-        <div className="mt-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-          <p className="mb-1 text-sm font-semibold text-emerald-300">🎉 备课完成！</p>
-          <p className="text-xs text-slate-400">
+        <div className="mt-6 rounded-2xl border border-shelf-green/30 bg-shelf-green-soft/60 p-4">
+          <p className="mb-1 text-sm font-semibold text-shelf-green">🎉 备课完成！</p>
+          <p className="text-xs text-shelf-muted">
             已生成 {preparationResult.lessonCount} 节课时，{preparationResult.nodeCount} 个知识点，
             {preparationResult.relationCount} 条知识关系，{preparationResult.scriptCount} 份课堂脚本。
           </p>
