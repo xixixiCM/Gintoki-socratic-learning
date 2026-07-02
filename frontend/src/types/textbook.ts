@@ -28,4 +28,16 @@ export interface PreparationResult {
   currentLessonName: string;
 }
 
+/** V0.7 真实 AI 备课返回 */
+export interface PreparationGenerateResponse {
+  taskId: number;
+  textbookId: number;
+  lessonCount: number;
+  nodeCount: number;
+  relationCount: number;
+  scriptCount: number;
+  currentLessonName: string;
+  status: 'success' | 'failed';
+}
+
 export type PrepareStatus = 'idle' | 'preparing' | 'done';

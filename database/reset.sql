@@ -1,5 +1,9 @@
 SET FOREIGN_KEY_CHECKS = 0;
 
+-- V0.7 新表（先删依赖表）
+DROP TABLE IF EXISTS preparation_artifact;
+DROP TABLE IF EXISTS preparation_task;
+
 -- V0.4 新表（先删依赖表）
 DROP TABLE IF EXISTS lesson_session;
 DROP TABLE IF EXISTS lesson_node_mapping;

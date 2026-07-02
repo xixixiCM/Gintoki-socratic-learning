@@ -1,4 +1,4 @@
-import type { DefaultTextbook, LearningOverview, PreparationResult } from '../types/textbook';
+import type { DefaultTextbook, LearningOverview, PreparationResult, PreparationGenerateResponse } from '../types/textbook';
 import type { LessonRecord, LessonDetail } from '../types/lesson';
 import type { LessonGraphData } from '../types/graph';
 
@@ -36,14 +36,28 @@ export const preparationResult: PreparationResult = {
   currentLessonName: '第 4 课：损失函数'
 };
 
+// ========== V0.7 真实 AI 备课失败 fallback ==========
+
+export const failedPreparationResponse: PreparationGenerateResponse = {
+  taskId: 0,
+  textbookId: 0,
+  lessonCount: 0,
+  nodeCount: 0,
+  relationCount: 0,
+  scriptCount: 0,
+  currentLessonName: '',
+  status: 'failed'
+};
+
 // ========== 备课步骤 ==========
 
 export const prepareSteps: string[] = [
-  '正在读取默认体验教材',
-  '正在划分课时与教材页码',
-  '正在抽取课程知识点',
-  '正在构建局部知识图谱',
+  '正在读取默认教材',
+  '正在抽取核心知识点',
+  '正在分析知识点关系',
+  '正在拆分课时',
   '正在生成课堂脚本',
+  '正在写入数据库',
   '备课完成'
 ];
 

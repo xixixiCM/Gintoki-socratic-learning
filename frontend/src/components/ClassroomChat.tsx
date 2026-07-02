@@ -127,10 +127,6 @@ export const ClassroomChat: React.FC<ClassroomChatProps> = ({
               本节目标：{lesson.objective}
             </p>
           </div>
-          <div className="min-w-[140px] rounded-[18px] border border-shelf-line/90 bg-shelf-panel px-3.5 py-3 text-center">
-            <small className="block text-xs text-shelf-muted mb-1">课堂时间</small>
-            <strong className="block text-lg text-shelf-ink">{lesson.usedTime} / {lesson.maxTime}</strong>
-          </div>
         </div>
       </div>
 

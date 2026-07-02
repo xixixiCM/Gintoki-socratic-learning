@@ -30,18 +30,6 @@ export const StudentLayout = (): JSX.Element => {
             >
               教材书架
             </Link>
-            <Link
-              to="/classroom"
-              className={`rounded-full px-4 py-2 transition ${isActive('/classroom')}`}
-            >
-              课堂
-            </Link>
-            <Link
-              to="/graph"
-              className={`rounded-full px-4 py-2 transition ${isActive('/graph')}`}
-            >
-              知识图谱
-            </Link>
             <span className="mx-1 text-shelf-muted">|</span>
             <span className="text-xs text-shelf-muted">
               {user?.nickname ?? user?.username ?? ''}

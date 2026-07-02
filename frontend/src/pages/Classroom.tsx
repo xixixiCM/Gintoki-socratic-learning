@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
 import { LessonRecordList } from '../components/LessonRecordList';
@@ -22,8 +22,10 @@ import {
   socraticFollowup,
   generateLessonSummary
 } from '../api/ai';
+import { getLearningOverview } from '../api/textbook';
 import type { LessonRecord, LessonDetail } from '../types/lesson';
 import type { LessonGraphData } from '../types/graph';
+import type { LearningOverview } from '../types/textbook';
 
 export const Classroom = (): JSX.Element => {
   const [currentLessonId, setCurrentLessonId] = useState<number>(4);
@@ -34,6 +36,10 @@ export const Classroom = (): JSX.Element => {
   const [showCompleteSummary, setShowCompleteSummary] = useState(false);
   const [completeResult, setCompleteResult] = useState<{ summary: string; nextLessonTitle: string } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [learningOverview, setLearningOverview] = useState<LearningOverview | null>(null);
+
+  // session 初始化锁，防止重复创建
+  const sessionInitRef = useRef<Set<number>>(new Set());
 
   // ========== V0.5: AI 动态对话状态 ==========
   const [chatMessages, setChatMessages] = useState<DynamicMessage[]>([]);
@@ -41,14 +47,18 @@ export const Classroom = (): JSX.Element => {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
-  // 初始化：从后端加载课时记录
+  // 初始化：从后端加载课时记录 + 学习概览
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       try {
-        const backendRecords = await getLessonRecords();
+        const [backendRecords, overview] = await Promise.all([
+          getLessonRecords(),
+          getLearningOverview()
+        ]);
         if (!cancelled) {
           setRecords(backendRecords);
+          setLearningOverview(overview);
           // 默认选中 current 课时
           const currentRecord = backendRecords.find(r => r.status === 'current');
           if (currentRecord) {
@@ -66,7 +76,7 @@ export const Classroom = (): JSX.Element => {
     return () => { cancelled = true; };
   }, []);
 
-  // 当前课时变化时，加载详情和图谱
+  // 当前课时变化时，加载详情 + 图谱 + 创建 session
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
@@ -91,23 +101,23 @@ export const Classroom = (): JSX.Element => {
       }
     };
     load();
+
+    // 为新课时创建 session（仅当该课时尚未创建过 session 时）
+    if (!sessionInitRef.current.has(currentLessonId)) {
+      sessionInitRef.current.add(currentLessonId);
+      const initSession = async () => {
+        try {
+          const result = await startLesson(currentLessonId);
+          if (!cancelled) setSessionId(result.sessionId);
+        } catch (err) {
+          console.warn('[Classroom] Failed to start lesson session.', err);
+        }
+      };
+      initSession();
+    }
+
     return () => { cancelled = true; };
   }, [currentLessonId]);
-
-  // 进入课堂时开始 session
-  useEffect(() => {
-    let cancelled = false;
-    const initSession = async () => {
-      try {
-        const result = await startLesson(currentLessonId);
-        if (!cancelled) setSessionId(result.sessionId);
-      } catch (err) {
-        console.warn('[Classroom] Failed to start lesson session.', err);
-      }
-    };
-    initSession();
-    return () => { cancelled = true; };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const currentLesson = useMemo(
     () => lessonDetailMap[currentLessonId] ?? lessonDetailMap[4] ?? mockLessonDetails[4],
@@ -123,17 +133,23 @@ export const Classroom = (): JSX.Element => {
     setCurrentLessonId(lessonId);
     setShowCompleteSummary(false);
     setCompleteResult(null);
-    // V0.5: 切换课时时清空动态对话
+    // 切换课时时清空动态对话和旧 session
     setChatMessages([]);
     setStudentInput('');
     setAiError(null);
+    setSessionId(null);
+    // 清空该课时的 session 初始化标记，让 useEffect 重新创建
+    sessionInitRef.current.delete(lessonId);
   }, []);
 
   const handleCompleteLesson = useCallback(async () => {
-    const effectiveSessionId = sessionId ?? 0;
+    if (sessionId === null) {
+      console.warn('[Classroom] Cannot complete lesson: no active session.');
+      return;
+    }
     try {
       const result = await completeLesson(currentLessonId, {
-        sessionId: effectiveSessionId,
+        sessionId,
         endType: 'early_finish'
       });
       setCompleteResult({
@@ -152,10 +168,12 @@ export const Classroom = (): JSX.Element => {
           setChatMessages([]);
           setStudentInput('');
           setAiError(null);
+          sessionInitRef.current.delete(result.nextLesson.id);
         }
       } catch { /* ignore */ }
     } catch (err) {
       console.warn('[Classroom] Failed to complete lesson.', err);
+      alert('完成课时失败，请稍后重试。');
     }
   }, [currentLessonId, sessionId]);
 
@@ -280,9 +298,9 @@ export const Classroom = (): JSX.Element => {
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
       {/* 顶部信息栏 */}
-      <div className="flex-shrink-0 mx-4 mt-4 mb-3 h-[74px] flex items-center justify-between gap-5 px-5 rounded-[24px] border border-shelf-line/90 bg-shelf-panel/80 shadow-shelf-sm backdrop-blur">
+      <div className="flex-shrink-0 mx-4 mt-4 mb-3 min-h-[74px] flex flex-wrap items-center justify-between gap-4 px-5 py-3 rounded-[24px] border border-shelf-line/90 bg-shelf-panel/80 shadow-shelf-sm backdrop-blur">
         {/* 左侧品牌 */}
-        <div className="flex items-center gap-3.5 min-w-[310px]">
+        <div className="flex items-center gap-3.5 min-w-0">
           <Link
             to="/home"
             className="w-[42px] h-[42px] grid place-items-center rounded-[14px] bg-[#f4e6d1] border border-shelf-line text-shelf-ink font-black transition hover:-translate-y-0.5 hover:shadow-shelf-sm"
@@ -291,29 +309,26 @@ export const Classroom = (): JSX.Element => {
             ←
           </Link>
           <div>
-            <h1 className="text-xl font-bold text-shelf-ink tracking-wide">体验教材课堂</h1>
+            <h1 className="text-xl font-bold text-shelf-ink tracking-wide">课程</h1>
             <p className="text-xs text-shelf-muted">
-              左侧查看已发生课程记录，中间进行课堂对话，右侧查看本课知识图谱。
+              这是所选教材下的课程页，左侧查看课时记录，中间进行课堂对话，右侧查看本课知识图谱。
             </p>
           </div>
         </div>
 
         {/* 中间课时信息 */}
-        <div className="flex-1 text-center">
+        <div className="flex-1 min-w-[240px] text-center">
           <strong className="block text-lg text-shelf-ink">{currentLesson.title}</strong>
           <span className="block text-xs text-shelf-muted">{currentLesson.objective}</span>
         </div>
 
         {/* 右侧状态 */}
-        <div className="flex items-center justify-end gap-2.5 min-w-[340px]">
+        <div className="flex items-center justify-end gap-2.5 min-w-0 flex-wrap">
           <div className="rounded-full border border-shelf-line/90 bg-shelf-panel px-3 py-2 text-xs text-shelf-muted whitespace-nowrap">
-            课程：<strong className="text-shelf-ink">机器学习入门</strong>
+            课程：<strong className="text-shelf-ink">{currentLesson.courseName}</strong>
           </div>
           <div className="rounded-full border border-shelf-line/90 bg-shelf-panel px-3 py-2 text-xs text-shelf-muted whitespace-nowrap">
-            已点亮：<strong className="text-shelf-ink">8 / 32</strong>
-          </div>
-          <div className="rounded-full border border-shelf-line/90 bg-shelf-panel px-3 py-2 text-xs text-shelf-muted whitespace-nowrap">
-            最长：<strong className="text-shelf-ink">40 分钟</strong>
+            已点亮：<strong className="text-shelf-ink">{learningOverview?.illuminatedCount ?? 0} / {learningOverview?.totalKnowledgeCount ?? 0}</strong>
           </div>
         </div>
       </div>
@@ -324,9 +339,9 @@ export const Classroom = (): JSX.Element => {
         </div>
       ) : (
         /* 三栏内容区 */
-        <div className="flex-1 grid grid-cols-[280px_minmax(420px,1fr)_390px] gap-[18px] px-4 pb-4 min-h-0">
+        <div className="flex-1 grid grid-cols-1 gap-[18px] px-4 pb-4 min-h-0 xl:grid-cols-[260px_minmax(420px,1fr)_350px] 2xl:grid-cols-[280px_minmax(460px,1fr)_390px]">
           {/* 左侧：课程记录 */}
-          <aside className="rounded-[26px] border border-shelf-line/90 bg-shelf-panel/80 shadow-shelf-sm overflow-hidden">
+          <aside className="rounded-[26px] border border-shelf-line/90 bg-shelf-panel/80 shadow-shelf-sm overflow-hidden xl:order-1">
             <LessonRecordList
               records={records}
               currentLessonId={currentLessonId}
@@ -335,7 +350,7 @@ export const Classroom = (): JSX.Element => {
           </aside>
 
           {/* 中间：课堂对话 */}
-          <main className="rounded-[26px] border border-shelf-line/90 bg-shelf-panel/80 shadow-shelf-sm overflow-hidden min-w-0">
+          <main className="rounded-[26px] border border-shelf-line/90 bg-shelf-panel/80 shadow-shelf-sm overflow-hidden min-w-0 xl:order-2">
             <ClassroomChat
               lesson={currentLesson}
               additionalMessages={chatMessages}
@@ -353,7 +368,7 @@ export const Classroom = (): JSX.Element => {
           </main>
 
           {/* 右侧：局部知识图谱 */}
-          <aside className="rounded-[26px] border border-shelf-line/90 bg-shelf-panel/80 shadow-shelf-sm overflow-hidden">
+          <aside className="rounded-[26px] border border-shelf-line/90 bg-shelf-panel/80 shadow-shelf-sm overflow-hidden xl:order-3">
             <LessonKnowledgeGraph graphData={currentGraph} />
           </aside>
         </div>

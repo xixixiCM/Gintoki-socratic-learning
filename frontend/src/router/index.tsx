@@ -3,6 +3,7 @@ import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { Home } from '../pages/Home';
 import { Graph } from '../pages/Graph';
 import { Classroom } from '../pages/Classroom';
+import { Course } from '../pages/Course';
 import { Login } from '../pages/Login';
 import { Register } from '../pages/Register';
 import { AdminDashboardPage } from '../pages/admin/AdminDashboard';
@@ -56,8 +57,13 @@ export const AppRouter = (): JSX.Element => {
       <Route element={<RequireAuth />}>
         <Route element={<StudentLayout />}>
           <Route path="/home" element={<Home />} />
-          <Route path="/classroom" element={<Classroom />} />
-          <Route path="/graph" element={<Graph />} />
+          <Route path="/course" element={<Course />}>
+            <Route index element={<Navigate to="classroom" replace />} />
+            <Route path="classroom" element={<Classroom />} />
+            <Route path="graph" element={<Graph />} />
+          </Route>
+          <Route path="/classroom" element={<Navigate to="/course/classroom" replace />} />
+          <Route path="/graph" element={<Navigate to="/course/graph" replace />} />
         </Route>
       </Route>
 

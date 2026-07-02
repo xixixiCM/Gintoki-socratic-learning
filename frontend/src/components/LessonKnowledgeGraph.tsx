@@ -14,6 +14,13 @@ const statusColorMap: Record<LessonGraphNodeStatus, string> = {
   support: '#ab9881'
 };
 
+const statusTextColorMap: Record<LessonGraphNodeStatus, string> = {
+  completed: '#f8f4ec',
+  current: '#2d241b',
+  review: '#f8f4ec',
+  support: '#2d241b'
+};
+
 const statusLabelMap: Record<LessonGraphNodeStatus, string> = {
   completed: '已学关联',
   current: '本节重点',
@@ -72,7 +79,7 @@ export const LessonKnowledgeGraph: React.FC<LessonKnowledgeGraphProps> = ({ grap
             },
             label: {
               show: true,
-              color: '#2d241b',
+              color: statusTextColorMap[node.status] ?? '#2d241b',
               fontSize: 12,
               fontWeight: node.status === 'current' ? 700 : 500
             }

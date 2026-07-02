@@ -15,15 +15,21 @@ export const PreparationPanel: React.FC<PreparationPanelProps> = ({
 }) => {
   if (prepareStatus === 'idle') return null;
 
+  // 排除最后一步"备课完成"，它由底部摘要卡片展示
+  const processSteps = prepareSteps.slice(0, -1);
+  const isComplete = prepareStatus === 'done';
+
   return (
     <div className="rounded-[30px] border border-shelf-line/90 bg-shelf-panel/80 p-6 shadow-shelf-sm backdrop-blur">
-      <h3 className="mb-6 text-lg font-bold text-shelf-ink">AI 备课流程</h3>
+      <h3 className="mb-6 text-lg font-bold text-shelf-ink">
+        {isComplete ? '✅ AI 备课流程' : 'AI 备课进行中…'}
+      </h3>
 
       {/* 步骤列表 */}
       <div className="space-y-3">
-        {prepareSteps.map((step, index) => {
-          const isDone = index < currentStep;
-          const isCurrent = index === currentStep;
+        {processSteps.map((step, index) => {
+          const isDone = isComplete || index < currentStep;
+          const isCurrent = !isComplete && index === currentStep;
 
           return (
             <div
@@ -56,13 +62,20 @@ export const PreparationPanel: React.FC<PreparationPanelProps> = ({
               <span className={`text-sm ${isCurrent ? 'font-semibold' : ''}`}>
                 {step}
               </span>
+
+              {/* 当前步骤提示 */}
+              {isCurrent && !isComplete && (
+                <span className="ml-auto text-xs text-shelf-gold/70 animate-pulse">
+                  等待 AI 响应…
+                </span>
+              )}
             </div>
           );
         })}
       </div>
 
       {/* 备课完成摘要 */}
-      {prepareStatus === 'done' && preparationResult !== null && (
+      {isComplete && preparationResult !== null && (
         <div className="mt-6 rounded-2xl border border-shelf-green/30 bg-shelf-green-soft/60 p-4">
           <p className="mb-1 text-sm font-semibold text-shelf-green">🎉 备课完成！</p>
           <p className="text-xs text-shelf-muted">

@@ -16,11 +16,26 @@ const difficultyColorMap: Record<number, string> = {
   5: '#9b651c'
 };
 
+const difficultyTextColorMap: Record<number, string> = {
+  1: '#f8f4ec',
+  2: '#f8f4ec',
+  3: '#f8f4ec',
+  4: '#2d241b',
+  5: '#f8f4ec'
+};
+
 const createNodeStyle = (node: GraphNode) => ({
   value: node.difficulty,
   symbolSize: 48 + node.difficulty * 10,
   itemStyle: {
     color: difficultyColorMap[node.difficulty] ?? '#475569'
+  },
+  label: {
+    show: true,
+    color: difficultyTextColorMap[node.difficulty] ?? '#2d241b',
+    fontSize: 12,
+    fontWeight: 600,
+    formatter: '{b}'
   }
 });
 
