@@ -18,18 +18,32 @@ export const PreparationPanel: React.FC<PreparationPanelProps> = ({
   // 排除最后一步"备课完成"，它由底部摘要卡片展示
   const processSteps = prepareSteps.slice(0, -1);
   const isComplete = prepareStatus === 'done';
+  const isFailed = prepareStatus === 'failed';
 
   return (
     <div className="rounded-[30px] border border-shelf-line/90 bg-shelf-panel/80 p-6 shadow-shelf-sm backdrop-blur">
       <h3 className="mb-6 text-lg font-bold text-shelf-ink">
-        {isComplete ? '✅ AI 备课流程' : 'AI 备课进行中…'}
+        {isComplete ? '✅ AI 备课流程' : isFailed ? '❌ AI 备课失败' : 'AI 备课进行中…'}
       </h3>
+
+      {/* 失败提示 */}
+      {isFailed && (
+        <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4">
+          <p className="text-sm font-semibold text-red-700">备课任务执行失败</p>
+          <p className="mt-1 text-xs text-red-500">
+            请检查后端日志后重试。可能是 AI 接口调用异常或数据格式问题。
+          </p>
+          <p className="mt-2 text-xs text-red-400">
+            提示：点击「AI 备课」按钮可重新开始。
+          </p>
+        </div>
+      )}
 
       {/* 步骤列表 */}
       <div className="space-y-3">
         {processSteps.map((step, index) => {
           const isDone = isComplete || index < currentStep;
-          const isCurrent = !isComplete && index === currentStep;
+          const isCurrent = !isComplete && !isFailed && index === currentStep;
 
           return (
             <div
@@ -39,7 +53,9 @@ export const PreparationPanel: React.FC<PreparationPanelProps> = ({
                   ? 'bg-shelf-gold/10 border border-shelf-gold/30 text-shelf-ink'
                   : isDone
                     ? 'text-shelf-muted'
-                    : 'text-shelf-muted/40'
+                    : isFailed && index === currentStep
+                      ? 'bg-red-50 border border-red-200 text-red-600'
+                      : 'text-shelf-muted/40'
               }`}
             >
               {/* 状态图标 */}
@@ -47,6 +63,10 @@ export const PreparationPanel: React.FC<PreparationPanelProps> = ({
                 {isDone ? (
                   <svg className="h-5 w-5 text-shelf-green" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : isFailed && index === currentStep ? (
+                  <svg className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 ) : isCurrent ? (
                   <svg className="h-5 w-5 animate-spin text-shelf-gold" fill="none" viewBox="0 0 24 24">
@@ -64,9 +84,16 @@ export const PreparationPanel: React.FC<PreparationPanelProps> = ({
               </span>
 
               {/* 当前步骤提示 */}
-              {isCurrent && !isComplete && (
+              {isCurrent && !isComplete && !isFailed && (
                 <span className="ml-auto text-xs text-shelf-gold/70 animate-pulse">
                   等待 AI 响应…
+                </span>
+              )}
+
+              {/* 失败步骤提示 */}
+              {isFailed && index === currentStep && (
+                <span className="ml-auto text-xs text-red-500">
+                  执行失败
                 </span>
               )}
             </div>

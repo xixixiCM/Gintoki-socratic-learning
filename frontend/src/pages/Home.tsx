@@ -7,7 +7,7 @@ import {
   learningOverview as mockLearningOverview,
   prepareSteps
 } from '../mock/defaultTextbook';
-import { getDefaultTextbook, getLearningOverview, generateDefaultTextbookPreparation, getLatestPreparationTask } from '../api/textbook';
+import { getDefaultTextbook, getLearningOverview, generateDefaultTextbookPreparation, getPreparationTask } from '../api/textbook';
 import type { DefaultTextbook, LearningOverview, PreparationResult, PrepareStatus } from '../types/textbook';
 
 export const Home = (): JSX.Element => {
@@ -19,19 +19,42 @@ export const Home = (): JSX.Element => {
   const [currentStep, setCurrentStep] = useState(0);
   const [prepResult, setPrepResult] = useState<PreparationResult | null>(null);
 
-  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const taskSeenRef = useRef(false);
-  const taskFinishedRef = useRef(false);
-  const startupFailureRef = useRef(false);
-  const missingTaskCountRef = useRef(0);
+  // 轮询定时器（递归 setTimeout）
+  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 当前正在追踪的 taskId
+  const currentTaskIdRef = useRef<number | null>(null);
+  // 组件是否已挂载
+  const mountedRef = useRef(true);
+  // POST 返回的结果暂存（唯一数据源）
   const pendingResultRef = useRef<PreparationResult | null>(null);
 
+  // 后端 current_step → 前端步骤索引映射
+  const stepKeyToIndex: Record<string, number> = {
+    'reading_textbook': 0,
+    'extracting_nodes': 1,
+    'extracting_relations': 2,
+    'splitting_lessons': 3,
+    'generating_scripts': 4,
+    'writing_db': 5,
+    'done': 5
+  };
+
+  // 清理定时器
   const clearPollTimer = useCallback(() => {
     if (pollTimerRef.current !== null) {
-      clearInterval(pollTimerRef.current);
+      clearTimeout(pollTimerRef.current);
       pollTimerRef.current = null;
     }
   }, []);
+
+  // 组件卸载时清理
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      clearPollTimer();
+    };
+  }, [clearPollTimer]);
 
   // 初始化：从后端加载数据
   useEffect(() => {
@@ -58,113 +81,108 @@ export const Home = (): JSX.Element => {
     return () => { cancelled = true; };
   }, []);
 
-  useEffect(() => {
-    return () => {
-      clearPollTimer();
-    };
-  }, [clearPollTimer]);
+  /**
+   * 递归轮询任务状态（上一次请求完成后再发下一次，避免并发乱序）
+   */
+  const pollTask = useCallback(async (taskId: number) => {
+    // 组件已卸载或 taskId 已过期，停止轮询
+    if (!mountedRef.current || currentTaskIdRef.current !== taskId) return;
 
-  // 后端 current_step → 前端步骤索引映射
-  const stepKeyToIndex: Record<string, number> = {
-    'reading_textbook': 0,
-    'extracting_nodes': 1,
-    'extracting_relations': 2,
-    'splitting_lessons': 3,
-    'generating_scripts': 4,
-    'writing_db': 5,
-    'done': prepareSteps.length - 1
-  };
-
-  const syncPreparationTask = useCallback(async () => {
     try {
-      const task = await getLatestPreparationTask();
+      const data = await getPreparationTask(taskId);
 
-      if (!task) {
-        if (startupFailureRef.current && !taskSeenRef.current) {
-          missingTaskCountRef.current += 1;
+      // 请求返回时再次校验：组件可能已卸载或 taskId 已变更
+      if (!mountedRef.current || currentTaskIdRef.current !== taskId) return;
 
-          if (missingTaskCountRef.current >= 5) {
-            clearPollTimer();
-            startupFailureRef.current = false;
-            missingTaskCountRef.current = 0;
-            setPrepareStatus('idle');
-            setCurrentStep(0);
-            setPrepResult(null);
-            setTextbook((prev) => ({ ...prev, status: 'not_prepared' }));
-            alert('AI 备课启动失败，请稍后重试。');
-          }
-        }
-
-        return;
-      }
-
-      taskSeenRef.current = true;
-      missingTaskCountRef.current = 0;
-
+      const { task } = data;
       const stepKey = task.currentStep;
+
+      // 更新步骤进度
       if (stepKey && stepKeyToIndex[stepKey] !== undefined) {
         setCurrentStep(stepKeyToIndex[stepKey]);
       }
 
+      // 处理 running / pending：继续轮询
       if (task.status === 'pending' || task.status === 'running') {
         setPrepareStatus('preparing');
         setTextbook((prev) => ({ ...prev, status: 'preparing' }));
+
+        pollTimerRef.current = setTimeout(() => {
+          void pollTask(taskId);
+        }, 1000);
         return;
       }
 
+      // 处理 success
       if (task.status === 'success') {
-        taskFinishedRef.current = true;
         clearPollTimer();
+        currentTaskIdRef.current = null;
+
         setPrepareStatus('done');
         setCurrentStep(prepareSteps.length - 1);
         setTextbook((prev) => ({ ...prev, status: 'prepared' }));
 
+        // 以 POST 返回的结果为准
         if (pendingResultRef.current !== null) {
           setPrepResult(pendingResultRef.current);
         }
 
-        getDefaultTextbook().then((tb) => setTextbook(tb)).catch(() => {});
-        getLearningOverview().then((lo) => setLearningOverview(lo)).catch(() => {});
+        // 刷新数据
+        getDefaultTextbook().then((tb) => { if (mountedRef.current) setTextbook(tb); }).catch(() => {});
+        getLearningOverview().then((lo) => { if (mountedRef.current) setLearningOverview(lo); }).catch(() => {});
         return;
       }
 
+      // 处理 failed
       if (task.status === 'failed') {
         clearPollTimer();
-        setPrepareStatus('idle');
+        currentTaskIdRef.current = null;
+
+        setPrepareStatus('failed');
         setCurrentStep(0);
         setPrepResult(null);
         setTextbook((prev) => ({ ...prev, status: 'not_prepared' }));
-        alert('AI 备课失败，请稍后重试。');
+
+        const errMsg = task.errorMessage || '未知错误';
+        console.error('[Home] 备课任务失败:', errMsg);
+        return;
       }
-    } catch {
-      // 轮询失败静默忽略，等待下一次轮询
+
+    } catch (_err) {
+      // 网络错误：延迟 2 秒后重试
+      if (!mountedRef.current || currentTaskIdRef.current !== taskId) return;
+
+      pollTimerRef.current = setTimeout(() => {
+        void pollTask(taskId);
+      }, 2000);
     }
   }, [clearPollTimer]);
 
+  /**
+   * 点击「AI 备课」
+   */
   const handlePrepare = useCallback(async () => {
-    if (pollTimerRef.current !== null || prepareStatus === 'preparing') return;
+    // 防止重复点击
+    if (prepareStatus === 'preparing') return;
 
+    // 清理旧轮询
     clearPollTimer();
+    currentTaskIdRef.current = null;
+    pendingResultRef.current = null;
+
+    // 进入准备中状态
     setPrepareStatus('preparing');
     setCurrentStep(0);
     setPrepResult(null);
     setTextbook((prev) => ({ ...prev, status: 'preparing' }));
-    taskSeenRef.current = false;
-    taskFinishedRef.current = false;
-    startupFailureRef.current = false;
-    missingTaskCountRef.current = 0;
-    pendingResultRef.current = null;
-
-    pollTimerRef.current = setInterval(() => {
-      void syncPreparationTask();
-    }, 1000);
-
-    void syncPreparationTask();
 
     try {
       const result = await generateDefaultTextbookPreparation();
 
+      if (!mountedRef.current) return;
+
       if (result.status === 'success') {
+        // 暂存结果（唯一数据源）
         pendingResultRef.current = {
           lessonCount: result.lessonCount,
           nodeCount: result.nodeCount,
@@ -173,16 +191,34 @@ export const Home = (): JSX.Element => {
           currentLessonName: result.currentLessonName
         };
 
-        if (taskFinishedRef.current) {
+        if (result.taskId > 0) {
+          // 用返回的 taskId 追踪本次任务
+          currentTaskIdRef.current = result.taskId;
+          void pollTask(result.taskId);
+        } else {
+          // 兜底：没有 taskId 直接标记完成
+          setPrepareStatus('done');
+          setCurrentStep(prepareSteps.length - 1);
           setPrepResult(pendingResultRef.current);
+          setTextbook((prev) => ({ ...prev, status: 'prepared' }));
+
+          getDefaultTextbook().then((tb) => { if (mountedRef.current) setTextbook(tb); }).catch(() => {});
+          getLearningOverview().then((lo) => { if (mountedRef.current) setLearningOverview(lo); }).catch(() => {});
         }
+      } else {
+        // POST 返回失败
+        setPrepareStatus('failed');
+        setCurrentStep(0);
+        setTextbook((prev) => ({ ...prev, status: 'not_prepared' }));
       }
     } catch (err) {
-      console.warn('[Home] Backend prepare failed, waiting for task polling.', err);
-      startupFailureRef.current = true;
-      void syncPreparationTask();
+      if (!mountedRef.current) return;
+      console.error('[Home] 备课请求失败:', err);
+      setPrepareStatus('failed');
+      setCurrentStep(0);
+      setTextbook((prev) => ({ ...prev, status: 'not_prepared' }));
     }
-  }, [clearPollTimer, prepareStatus, syncPreparationTask]);
+  }, [clearPollTimer, pollTask, prepareStatus]);
 
   const handleEnterClassroom = useCallback(() => {
     navigate('/course/classroom');

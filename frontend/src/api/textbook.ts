@@ -1,5 +1,5 @@
 import { request } from './request';
-import type { DefaultTextbook, LearningOverview, PreparationResult, PreparationGenerateResponse } from '../types/textbook';
+import type { DefaultTextbook, LearningOverview, PreparationResult, PreparationGenerateResponse, PreparationTaskDetail } from '../types/textbook';
 
 interface ApiResponse<T> {
   code: number;
@@ -27,12 +27,22 @@ export const prepareDefaultTextbook = async (): Promise<PreparationResult> => {
 
 /** V0.7 真实 AI 备课 */
 export const generateDefaultTextbookPreparation = async (): Promise<PreparationGenerateResponse> => {
-  const response = await request.post<ApiResponse<PreparationGenerateResponse>>('/preparation/default-textbook/generate');
+  const response = await request.post<ApiResponse<PreparationGenerateResponse>>(
+    '/preparation/default-textbook/generate',
+    undefined,
+    { timeout: 300000 }
+  );
   return response.data.data;
 };
 
 /** 查询最近备课任务 */
 export const getLatestPreparationTask = async () => {
   const response = await request.get<ApiResponse<any>>('/preparation/latest');
+  return response.data.data;
+};
+
+/** 按 taskId 查询备课任务详情（用于轮询） */
+export const getPreparationTask = async (taskId: number): Promise<PreparationTaskDetail> => {
+  const response = await request.get<ApiResponse<PreparationTaskDetail>>(`/preparation/tasks/${taskId}`);
   return response.data.data;
 };

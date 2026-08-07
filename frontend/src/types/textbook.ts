@@ -40,4 +40,24 @@ export interface PreparationGenerateResponse {
   status: 'success' | 'failed';
 }
 
-export type PrepareStatus = 'idle' | 'preparing' | 'done';
+export type PrepareStatus = 'idle' | 'preparing' | 'done' | 'failed';
+
+/** 备课任务轮询状态 */
+export interface PreparationTaskDetail {
+  task: {
+    taskId: number;
+    textbookId: number | null;
+    status: string;
+    currentStep: string | null;
+    errorMessage: string | null;
+    startedAt: string | null;
+    finishedAt: string | null;
+    createdAt: string;
+  };
+  artifacts: Array<{
+    id: number;
+    artifactType: string;
+    createdAt: string;
+    hasContent: boolean;
+  }>;
+}

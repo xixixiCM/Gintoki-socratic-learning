@@ -116,7 +116,7 @@ export const TextbookShelf: React.FC<TextbookShelfProps> = ({
               disabled={prepareStatus === 'preparing'}
               className="whitespace-nowrap rounded-full border border-shelf-gold/70 bg-shelf-panel text-shelf-ink font-bold px-5 py-3 text-sm shadow-[0_10px_18px_rgba(45,36,27,0.12)] hover:bg-shelf-bg transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {prepareStatus === 'preparing' ? '备课中...' : 'AI 备课'}
+              {prepareStatus === 'preparing' ? '备课中...' : prepareStatus === 'failed' ? '重新备课' : 'AI 备课'}
             </button>
             <button
               onClick={onEnterClassroom}
